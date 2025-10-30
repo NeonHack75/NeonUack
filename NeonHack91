@@ -1,20 +1,20 @@
 -- ═══════════════════════════════════════════════════════════════
---     DEATH BALL GUI v9.9 — ИСПРАВЛЕННЫЙ + УЛУЧШЕННЫЙ 2025
---                   by ЗЛАЯ ТАРЕЛКА + GROK (FIXED)
+--     DEATH BALL GUI v10.0 — ВКЛАДКИ НЕ ПУСТЫЕ! 2025 ФИКС
 -- ═══════════════════════════════════════════════════════════════
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "Death Ball GUI v9.9 — FIXED 2025",
-   LoadingTitle = "ФИКСИМ ВСЁ...",
+   Name = "Death Ball GUI v10.0 — FULL",
+   LoadingTitle = "ЗАГРУЗКА ПОЛНОЙ ВЕРСИИ...",
    LoadingSubtitle = "by Злая Тарелка + Grok",
-   ConfigurationSaving = {Enabled = true, FolderName = "DeathBallFixed"}
+   ConfigurationSaving = {Enabled = true, FolderName = "DeathBallFull"}
 })
 
-local FarmTab = Window:CreateTab("FARM", nil)
-local CombatTab = Window:CreateTab("COMBAT", nil)
-local VisualsTab = Window:CreateTab("VISUALS", nil)
-local MiscTab = Window:CreateTab("MISC", nil)
+-- === ВКЛАДКИ (НЕ ПУСТЫЕ!) ===
+local FarmTab = Window:CreateTab("ФАРМ", 4483362458)
+local CombatTab = Window:CreateTab("БОЙ", 4483362458)
+local VisualsTab = Window:CreateTab("ВИЗУАЛ", 4483362458)
+local MiscTab = Window:CreateTab("ПРОЧЕЕ", 4483362458)
 
 -- === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
 getgenv().AutoFarm = false
@@ -32,6 +32,7 @@ getgenv().AutoWalk = false
 getgenv().ParryDistance = 20
 getgenv().PingCompensation = 0.12
 
+-- === СЕРВИСЫ ===
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,18 +44,19 @@ local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local Root = Character:WaitForChild("HumanoidRootPart")
 
--- === ПРАВИЛЬНЫЕ REMOTE (2025) ===
-local ParryRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ParryBall")
-local ThrowRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ThrowBall")
-local AbilityRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("UseAbility")
-local ClaimRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ClaimReward")
+-- === REMOTE (2025) ===
+local Events = ReplicatedStorage:WaitForChild("Events")
+local ParryRemote = Events:WaitForChild("ParryBall")
+local ThrowRemote = Events:WaitForChild("ThrowBall")
+local AbilityRemote = Events:WaitForChild("UseAbility")
+local ClaimRemote = Events:WaitForChild("ClaimReward")
 
--- === НАХОЖДЕНИЕ ШАРА (2025) ===
+-- === НАХОЖДЕНИЕ ШАРА ===
 local function GetBall()
     return Workspace:FindFirstChild("DeathBall") or Workspace:FindFirstChild("Ball")
 end
 
--- === AUTO PARRY (УЛУЧШЕННЫЙ) ===
+-- === AUTO PARRY ===
 spawn(function()
     while task.wait(0.01) do
         if getgenv().AutoParry and GetBall() then
@@ -69,30 +71,27 @@ spawn(function()
                 pcall(function()
                     ParryRemote:FireServer(ball)
                 end)
-                task.wait(0.05 + math.random(1,3)/100) -- Анти-бан
             end
         end
     end
 end)
 
--- === AUTO FARM + AUTO SPAM ===
+-- === AUTO FARM + SPAM ===
 spawn(function()
     while task.wait(0.1) do
         if (getgenv().AutoFarm or getgenv().AutoSpam) and GetBall() then
-            local ball = GetBall()
             pcall(function()
-                ThrowRemote:FireServer(ball)
+                ThrowRemote:FireServer(GetBall())
             end)
         end
     end
 end)
 
--- === AUTO WALK (К ШАРУ) ===
+-- === AUTO WALK ===
 spawn(function()
     while task.wait(0.1) do
         if getgenv().AutoWalk and GetBall() then
-            local ball = GetBall()
-            Humanoid:MoveTo(ball.Position)
+            Humanoid:MoveTo(GetBall().Position)
         end
     end
 end)
@@ -109,9 +108,8 @@ spawn(function()
     end
 end)
 
--- === BALL ESP (Highlight + Text) ===
-local BallHighlight = nil
-local BallBillboard = nil
+-- === BALL ESP ===
+local BallHighlight, BallBillboard
 RunService.RenderStepped:Connect(function()
     local ball = GetBall()
     if getgenv().BallESP and ball then
@@ -120,7 +118,6 @@ RunService.RenderStepped:Connect(function()
             BallHighlight.FillColor = Color3.fromRGB(255, 0, 0)
             BallHighlight.OutlineColor = Color3.fromRGB(255, 255, 0)
         end
-
         if not BallBillboard then
             BallBillboard = Instance.new("BillboardGui", ball)
             BallBillboard.Size = UDim2.new(0, 100, 0, 50)
@@ -132,9 +129,8 @@ RunService.RenderStepped:Connect(function()
             text.TextColor3 = Color3.fromRGB(255, 0, 0)
             text.TextScaled = true
         end
-
         local dist = (ball.Position - Root.Position).Magnitude
-        BallBillboard:FindFirstChild("TextLabel").Text = "BALL | " .. math.floor(dist) .. "m"
+        BallBillboard.TextLabel.Text = "BALL | " .. math.floor(dist) .. "m"
     else
         if BallHighlight then BallHighlight:Destroy(); BallHighlight = nil end
         if BallBillboard then BallBillboard:Destroy(); BallBillboard = nil end
@@ -155,12 +151,12 @@ RunService.RenderStepped:Connect(function()
             end
         end
     else
-        for _, hl in pairs(PlayerHighlights) do hl:Destroy() end
+        for _, hl in pairs(PlayerHighlights) do if hl then hl:Destroy() end end
         PlayerHighlights = {}
     end
 end)
 
--- === SPEED + NOCLIP + INFINITE JUMP ===
+-- === SPEED + NOCLIP + JUMP ===
 RunService.Stepped:Connect(function()
     if Character and Humanoid then
         Humanoid.WalkSpeed = getgenv().SpeedHack and getgenv().WalkSpeed or 16
@@ -178,22 +174,41 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- === GUI ===
-FarmTab:CreateToggle({Name = "Auto Farm", Callback = function(v) getgenv().AutoFarm = v end})
-FarmTab:CreateToggle({Name = "Auto Claim Quest", Callback = function(v) getgenv().AutoClaimQuest = v end})
+-- === ВКЛАДКИ — ПОЛНОСТЬЮ ЗАПОЛНЕНЫ! ===
 
-CombatTab:CreateToggle({Name = "Auto Parry", Callback = function(v) getgenv().AutoParry = v end})
-CombatTab:CreateSlider({Name = "Parry Distance", Range = {10, 40}, Callback = function(v) getgenv().ParryDistance = v end})
-CombatTab:CreateToggle({Name = "Auto Walk", Callback = function(v) getgenv().AutoWalk = v end})
-CombatTab:CreateToggle({Name = "Auto Spam", Callback = function(v) getgenv().AutoSpam = v end})
-CombatTab:CreateToggle({Name = "Auto Ability", Callback = function(v) getgenv().AutoAbility = v end})
+-- FARM TAB
+FarmTab:CreateSection("АВТО-ФАРМ")
+FarmTab:CreateToggle({Name = "Auto Farm", CurrentValue = false, Callback = function(v) getgenv().AutoFarm = v end})
+FarmTab:CreateToggle({Name = "Auto Claim Quest", CurrentValue = false, Callback = function(v) getgenv().AutoClaimQuest = v end})
+FarmTab:CreateToggle({Name = "Auto Spam", CurrentValue = false, Callback = function(v) getgenv().AutoSpam = v end})
 
-VisualsTab:CreateToggle({Name = "Ball ESP", Callback = function(v) getgenv().BallESP = v end})
-VisualsTab:CreateToggle({Name = "Player ESP", Callback = function(v) getgenv().PlayerESP = v end})
+-- COMBAT TAB
+CombatTab:CreateSection("БОЙ")
+CombatTab:CreateToggle({Name = "Auto Parry", CurrentValue = false, Callback = function(v) getgenv().AutoParry = v end})
+CombatTab:CreateSlider({Name = "Parry Distance", Range = {10, 40}, Increment = 1, CurrentValue = 20, Callback = function(v) getgenv().ParryDistance = v end})
+CombatTab:CreateSlider({Name = "Ping Compensation", Range = {0, 0.5}, Increment = 0.01, CurrentValue = 0.12, Callback = function(v) getgenv().PingCompensation = v end})
+CombatTab:CreateToggle({Name = "Auto Walk", CurrentValue = false, Callback = function(v) getgenv().AutoWalk = v end})
+CombatTab:CreateToggle({Name = "Auto Ability", CurrentValue = false, Callback = function(v) getgenv().AutoAbility = v end})
 
-MiscTab:CreateToggle({Name = "Speed Hack", Callback = function(v) getgenv().SpeedHack = v end})
-MiscTab:CreateSlider({Name = "Walk Speed", Range = {16, 300}, Callback = function(v) getgenv().WalkSpeed = v end})
-MiscTab:CreateToggle({Name = "Infinite Jump", Callback = function(v) getgenv().InfiniteJump = v end})
-MiscTab:CreateToggle({Name = "NoClip", Callback = function(v) getgenv().NoClip = v end})
+-- VISUALS TAB
+VisualsTab:CreateSection("ВИЗУАЛ")
+VisualsTab:CreateToggle({Name = "Ball ESP", CurrentValue = false, Callback = function(v) getgenv().BallESP = v end})
+VisualsTab:CreateToggle({Name = "Player ESP", CurrentValue = false, Callback = function(v) getgenv().PlayerESP = v end})
 
-Rayfield:Notify({Title = "ФИКС v9.9", Content = "ВСЁ РАБОТАЕТ! 2025 UPDATE", Duration = 6})
+-- MISC TAB
+MiscTab:CreateSection("ДВИЖЕНИЕ")
+MiscTab:CreateToggle({Name = "Speed Hack", CurrentValue = false, Callback = function(v) getgenv().SpeedHack = v end})
+MiscTab:CreateSlider({Name = "Walk Speed", Range = {16, 300}, Increment = 5, CurrentValue = 100, Callback = function(v) getgenv().WalkSpeed = v end})
+MiscTab:CreateToggle({Name = "Infinite Jump", CurrentValue = false, Callback = function(v) getgenv().InfiniteJump = v end})
+MiscTab:CreateToggle({Name = "NoClip", CurrentValue = false, Callback = function(v) getgenv().NoClip = v end})
+
+MiscTab:CreateSection("УТИЛИТЫ")
+MiscTab:CreateButton({Name = "Rejoin Server", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId) end})
+MiscTab:CreateButton({Name = "Destroy GUI", Callback = function() Rayfield:Destroy() end})
+
+-- === УВЕДОМЛЕНИЕ ===
+Rayfield:Notify({
+    Title = "Death Ball GUI v10.0",
+    Content = "ВКЛАДКИ ЗАПОЛНЕНЫ! ВСЁ РАБОТАЕТ! 2025",
+    Duration = 6
+})
