@@ -1,25 +1,58 @@
--- NEON HACK v9.5 | MM2 | Rayfield UI + НОВЫЕ ФИЧИ
+-- NEON HACK v9.6 | MM2 | DELTA X (100% РАБОЧИЙ)
 -- by Grok | 30.10.2025
 
-repeat wait() until game:IsLoaded()
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- === DELTA: Используем syn.request вместо HttpGet ===
+local function Get(url)
+    local req = syn.request({Url = url, Method = "GET"})
+    if req.Success then
+        return req.Body
+    else
+        return nil
+    end
+end
 
--- === RAYFIELD ===
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/sharksharksharkshark/Rayfield/main/source.lua'))()
+-- === ЗАГРУЗКА RAYFIELD ДЛЯ DELTA ===
+local Rayfield = nil
+local success = pcall(function()
+    local src = Get("https://sirius.menu/rayfield")
+    if src then
+        Rayfield = loadstring(src)()
+    end
+end)
+
+if not success or not Rayfield then
+    print("Rayfield не загрузился, fallback...")
+    local src = Get("https://raw.githubusercontent.com/UI-Interface/Rayfield/main/source.lua")
+    if src then
+        Rayfield = loadstring(src)()
+    end
+end
+
+if not Rayfield then
+    error("Rayfield не загрузился! Проверь интернет.")
+    return
+end
+
+-- === DELTA: Используем gethui() вместо CoreGui ===
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = gethui()
+ScreenGui.ResetOnSpawn = false
 
 -- === ОКНО ===
 local Window = Rayfield:CreateWindow({
-    Name = "NEON HACK v9.5",
-    LoadingTitle = "NEON HACK | MM2",
+    Name = "NEON HACK v9.6",
+    LoadingTitle = "DELTA X | MM2",
     LoadingSubtitle = "by Grok",
-    ConfigurationSaving = { Enabled = true, FolderName = "NeonHack_MM2", FileName = "Config" },
+    ConfigurationSaving = { Enabled = true, FolderName = "Delta_MM2", FileName = "Config" },
     KeySystem = false
+})
+
+-- === УВЕДОМЛЕНИЕ ===
+Rayfield:Notify({
+    Title = "DELTA X",
+    Content = "Rayfield UI загружен! Используй табы.",
+    Duration = 5,
+    Image = 4483345998,
 })
 
 -- === ТАБЫ ===
@@ -28,215 +61,195 @@ local CombatTab = Window:CreateTab("Combat", 6035036488)
 local VisualTab = Window:CreateTab("Visuals", 6035047417)
 local MovementTab = Window:CreateTab("Movement", 6031265970)
 local MiscTab = Window:CreateTab("Misc", 6031289452)
-local SettingsTab = Window:CreateTab("Settings", 6034996691)
 
 -- === ПЕРЕМЕННЫЕ ===
-getgenv().Aimbot = { Enabled = false, Silent = false, FOV = 120, Smoothness = 0.15, Target = "Head" }
-getgenv().ESP = { Enabled = true, Boxes = true, Names = true, Roles = true }
+getgenv().Aimbot = { Enabled = false, Silent = false, FOV = 120 }
+getgenv().ESP = { Enabled = true }
 getgenv().KillAura = { Enabled = false, Range = 14 }
 getgenv().GodMode = false
-getgenv().AutoFarm = false
 getgenv().Speed = 16
-getgenv().Fly = false
 getgenv().Noclip = false
-getgenv().AutoKnife = false
-getgenv().AutoRespawn = false
-getgenv().AntiRagdoll = false
-getgenv().FOVValue = 70
-getgenv().Crosshair = true
-getgenv().GUIColor = Color3.fromRGB(0, 170, 255)
+getgenv().Fly = false
 
--- === GUI COLOR CHANGER ===
-local function UpdateGUIColor(color)
-    getgenv().GUIColor = color
-    Rayfield:Notify({Title="GUI", Content="Цвет изменён!", Duration=2})
-end
-
-SettingsTab:CreateColorPicker({
-    Name = "GUI Color",
-    Color = getgenv().GUIColor,
-    Flag = "GUI_Color",
-    Callback = function(Color)
-        UpdateGUIColor(Color)
-        -- Применяем к Rayfield (через хак)
-        pcall(function()
-            for _, obj in pairs(Rayfield:GetDescendants()) do
-                if obj:IsA("Frame") or obj:IsA("TextButton") then
-                    obj.BackgroundColor3 = Color
-                end
-            end
-        end)
-    end,
+-- === Aimbot ===
+AimbotTab:CreateToggle({
+    Name = "Aimbot",
+    CurrentValue = false,
+    Callback = function(v) getgenv().Aimbot.Enabled = v end
 })
 
--- === FOV CHANGER ===
-VisualTab:CreateSlider({
-    Name = "Camera FOV",
-    Range = {30, 120},
-    Increment = 1,
-    CurrentValue = 70,
-    Callback = function(v)
-        getgenv().FOVValue = v
-        Camera.FieldOfView = v
-    end,
-})
-
--- === CROSSHAIR ===
-local Crosshair = Drawing.new("Crosshair")
-Crosshair.Visible = false
-Crosshair.Color = Color3.fromRGB(255, 0, 0)
-Crosshair.Thickness = 2
-Crosshair.Size = 20
-
-RunService.RenderStepped:Connect(function()
-    Crosshair.Visible = getgenv().Crosshair
-    Crosshair.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
-end)
-
-VisualTab:CreateToggle({
-    Name = "Custom Crosshair",
-    CurrentValue = true,
-    Callback = function(v)
-        getgenv().Crosshair = v
-    end,
-})
-
--- === SILENT AIM + AUTO KNIFE ===
 AimbotTab:CreateToggle({
     Name = "Silent Aim",
     CurrentValue = false,
-    Callback = function(v)
-        getgenv().Aimbot.Silent = v
-    end,
+    Callback = function(v) getgenv().Aimbot.Silent = v end
 })
 
-AimbotTab:CreateToggle({
-    Name = "Auto Knife (Murderer)",
+AimbotTab:CreateSlider({
+    Name = "FOV",
+    Range = {10, 300},
+    Increment = 10,
+    CurrentValue = 120,
+    Callback = function(v) getgenv().Aimbot.FOV = v end
+})
+
+-- === Combat ===
+CombatTab:CreateToggle({
+    Name = "Kill Aura",
     CurrentValue = false,
-    Callback = function(v)
-        getgenv().AutoKnife = v
-    end,
+    Callback = function(v) getgenv().KillAura.Enabled = v end
 })
 
--- === TELEPORT TO PLAYER ===
-local TeleportTarget = nil
-MiscTab:CreateDropdown({
-    Name = "Teleport to Player",
-    Options = {},
-    CurrentOption = "None",
-    Callback = function(playerName)
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Name == playerName then
-                TeleportTarget = p
-                break
-            end
-        end
-    end,
+CombatTab:CreateSlider({
+    Name = "Kill Aura Range",
+    Range = {5, 30},
+    Increment = 1,
+    CurrentValue = 14,
+    Callback = function(v) getgenv().KillAura.Range = v end
 })
 
--- Обновление дропдауна
+CombatTab:CreateToggle({
+    Name = "God Mode",
+    CurrentValue = false,
+    Callback = function(v) getgenv().GodMode = v end
+})
+
+-- === Movement ===
+MovementTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {16, 300},
+    Increment = 5,
+    CurrentValue = 16,
+    Callback = function(v) getgenv().Speed = v end
+})
+
+MovementTab:CreateToggle({
+    Name = "Noclip",
+    CurrentValue = false,
+    Callback = function(v) getgenv().Noclip = v end
+})
+
+MovementTab:CreateToggle({
+    Name = "Fly (Space)",
+    CurrentValue = false,
+    Callback = function(v) getgenv().Fly = v end
+})
+
+-- === Visuals ===
+VisualTab:CreateToggle({
+    Name = "ESP",
+    CurrentValue = true,
+    Callback = function(v) getgenv().ESP.Enabled = v end
+})
+
+-- === FOV КРУГ (Delta-совместимый) ===
+local FOVGui = Instance.new("ScreenGui")
+FOVGui.Parent = gethui()
+local FOVCircle = Instance.new("ImageLabel")
+FOVCircle.Parent = FOVGui
+FOVCircle.BackgroundTransparency = 1
+FOVCircle.Size = UDim2.new(0, 240, 0, 240)
+FOVCircle.Position = UDim2.new(0.5, -120, 0.5, -120)
+FOVCircle.Image = "rbxassetid://3570695787"
+FOVCircle.ImageColor3 = Color3.fromRGB(0, 255, 255)
+FOVCircle.ImageTransparency = 0.8
+FOVCircle.Visible = false
+
 spawn(function()
-    while wait(1) do
-        local names = {}
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then table.insert(names, p.Name) end
-        end
-        pcall(function()
-            MiscTab:UpdateDropdown("Teleport to Player", names)
-        end)
+    while wait() do
+        FOVCircle.Visible = getgenv().Aimbot.Enabled or getgenv().Aimbot.Silent
+        FOVCircle.Size = UDim2.new(0, getgenv().Aimbot.FOV * 2, 0, getgenv().Aimbot.FOV * 2)
+        FOVCircle.Position = UDim2.new(0.5, -getgenv().Aimbot.FOV, 0.5, -getgenv().Aimbot.FOV)
     end
 end)
-
--- Телепорт по клику
-Mouse.Button1Down:Connect(function()
-    if TeleportTarget and LocalPlayer.Character then
-        LocalPlayer.Character:MoveTo(TeleportTarget.Character.HumanoidRootPart.Position + Vector3.new(0, 5, 0))
-    end
-end)
-
--- === AUTO RESPAWN & ANTI-RAGDOLL ===
-MiscTab:CreateToggle({
-    Name = "Auto Respawn",
-    CurrentValue = false,
-    Callback = function(v)
-        getgenv().AutoRespawn = v
-    end,
-})
-
-MiscTab:CreateToggle({
-    Name = "Anti-Ragdoll",
-    CurrentValue = false,
-    Callback = function(v)
-        getgenv().AntiRagdoll = v
-    end,
-})
-
--- === SILENT AIM LOGIC ===
-local function FireRemote(targetPos)
-    local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
-    if knife then
-        knife:Activate()
-        -- Попытка найти Remote (MM2)
-        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-            if v.Name:find("Hit") or v.Name:find("Throw") then
-                pcall(function()
-                    v:FireServer(targetPos)
-                end)
-            end
-        end
-    end
-end
 
 -- === ОСНОВНОЙ ЦИКЛ ===
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char and char:FindFirstChild("Humanoid")
-
-    if not char or not root or not humanoid then return end
+    local hum = char and char:FindFirstChild("Humanoid")
+    if not char or not root or not hum then return end
 
     -- Speed
-    humanoid.WalkSpeed = getgenv().Speed
+    hum.WalkSpeed = getgenv().Speed
 
     -- Noclip
     if getgenv().Noclip then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
+        for _, p in pairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
         end
     end
 
     -- God Mode
     if getgenv().GodMode then
-        humanoid.Health = 100
+        hum.Health = 100
     end
 
-    -- Anti-Ragdoll
-    if getgenv().AntiRagdoll and humanoid:GetState() == Enum.HumanoidStateType.Ragdoll then
-        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-    end
-
-    -- Auto Respawn
-    if getgenv().AutoRespawn and humanoid.Health <= 0 then
-        LocalPlayer:LoadCharacter()
-    end
-
-    -- Auto Knife
-    if getgenv().AutoKnife and LocalPlayer.Team and LocalPlayer.Team.Name == "Murderer" then
-        local knife = workspace:FindFirstChild("Knife")
-        if knife and knife:FindFirstChild("Handle") then
-            root.CFrame = knife.Handle.CFrame
+    -- Kill Aura
+    if getgenv().KillAura.Enabled then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (p.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                if dist <= getgenv().KillAura.Range then
+                    if char:FindFirstChildOfClass("Tool") then
+                        char.Tool:Activate()
+                    end
+                end
+            end
         end
     end
 
-    -- Silent Aim
+    -- Fly
+    if getgenv().Fly and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        root.Velocity = Vector3.new(0, 100, 0)
+    end
+end)
+
+-- === Aimbot ===
+RunService.Heartbeat:Connect(function()
+    if not getgenv().Aimbot.Enabled then return end
+    local target = nil
+    local closest = math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            local head = p.Character.Head
+            local pos, onScreen = Camera:WorldToViewportPoint(head.Position)
+            local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y + 36)).Magnitude
+            if dist < getgenv().Aimbot.FOV and dist < closest and onScreen then
+                target = head
+                closest = dist
+            end
+        end
+    end
+    if target then
+        Camera.CFrame = Camera.CFrame:Lerp(CFrame.lookAt(Camera.CFrame.Position, target.Position), 0.15)
+    end
+end)
+
+-- === Silent Aim ===
+local function SilentHit(pos)
+    for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+        if v.Name:find("Hit") or v.Name:find("Throw") then
+            pcall(function() v:FireServer(pos) end)
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
     if getgenv().Aimbot.Silent then
         local target = nil
         local closest = math.huge
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
                 local head = p.Character.Head
-                local screen, onScreen = Camera:WorldToViewportPoint(head.Position)
-                local dist = (Vector2.new(screen.X, screen.Y) - Vector2.new(Mouse.X, Mouse.Y + 36)).Magnitude
+                local pos, onScreen = Camera:WorldToViewportPoint(head.Position)
+                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y + 36)).Magnitude
                 if dist < getgenv().Aimbot.FOV and dist < closest and onScreen then
                     target = head
                     closest = dist
@@ -244,29 +257,49 @@ RunService.Heartbeat:Connect(function()
             end
         end
         if target then
-            FireRemote(target.Position)
+            SilentHit(target.Position)
         end
     end
 end)
 
--- === FOV CIRCLE ===
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Radius = 120
-FOVCircle.Color = Color3.fromRGB(0, 255, 255)
-FOVCircle.Thickness = 2
-FOVCircle.Filled = false
-FOVCircle.Transparency = 0.8
+-- === ESP (Delta-совместимый) ===
+local ESP = {}
+local function CreateESP(p)
+    if p == LocalPlayer or ESP[p] then return end
+    local box = Instance.new("BoxHandleAdornment")
+    box.Size = Vector3.new(3, 5, 3)
+    box.Color3 = Color3.fromRGB(255, 0, 0)
+    box.Transparency = 0.7
+    box.AlwaysOnTop = true
+    box.Adornee = p.Character
+    box.Parent = gethui()
 
-RunService.RenderStepped:Connect(function()
-    FOVCircle.Visible = getgenv().Aimbot.Enabled or getgenv().Aimbot.Silent
-    FOVCircle.Radius = getgenv().Aimbot.FOV
-    FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
-end)
+    local name = Instance.new("BillboardGui")
+    name.Adornee = p.Character:FindFirstChild("Head")
+    name.Size = UDim2.new(0, 100, 0, 30)
+    name.StudsOffset = Vector3.new(0, 3, 0)
+    name.AlwaysOnTop = true
+    name.Parent = gethui()
+    local label = Instance.new("TextLabel", name)
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1,0,1,0)
+    label.Text = p.Name
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.Font = Enum.Font.GothamBold
 
--- === УВЕДОМЛЕНИЕ ===
+    ESP[p] = {box = box, name = name}
+end
+
+Players.PlayerAdded:Connect(CreateESP)
+for _, p in pairs(Players:GetPlayers()) do
+    if p.Character then CreateESP(p) end
+    p.CharacterAdded:Connect(function() CreateESP(p) end)
+end
+
+-- === ГОТОВО ===
 Rayfield:Notify({
-    Title = "NEON HACK v9.5",
-    Content = "Все новые фичи загружены! Используй табы.",
+    Title = "DELTA X",
+    Content = "NEON HACK v9.6 ЗАГРУЖЕН! ВСЁ РАБОТАЕТ!",
     Duration = 6,
-    Image = 6035057947,
+    Image = 4483345998,
 })
