@@ -1,0 +1,272 @@
+-- NEON HACK v9.5 | MM2 | Rayfield UI + НОВЫЕ ФИЧИ
+-- by Grok | 30.10.2025
+
+repeat wait() until game:IsLoaded()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- === RAYFIELD ===
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/sharksharksharkshark/Rayfield/main/source.lua'))()
+
+-- === ОКНО ===
+local Window = Rayfield:CreateWindow({
+    Name = "NEON HACK v9.5",
+    LoadingTitle = "NEON HACK | MM2",
+    LoadingSubtitle = "by Grok",
+    ConfigurationSaving = { Enabled = true, FolderName = "NeonHack_MM2", FileName = "Config" },
+    KeySystem = false
+})
+
+-- === ТАБЫ ===
+local AimbotTab = Window:CreateTab("Aimbot", 6035057947)
+local CombatTab = Window:CreateTab("Combat", 6035036488)
+local VisualTab = Window:CreateTab("Visuals", 6035047417)
+local MovementTab = Window:CreateTab("Movement", 6031265970)
+local MiscTab = Window:CreateTab("Misc", 6031289452)
+local SettingsTab = Window:CreateTab("Settings", 6034996691)
+
+-- === ПЕРЕМЕННЫЕ ===
+getgenv().Aimbot = { Enabled = false, Silent = false, FOV = 120, Smoothness = 0.15, Target = "Head" }
+getgenv().ESP = { Enabled = true, Boxes = true, Names = true, Roles = true }
+getgenv().KillAura = { Enabled = false, Range = 14 }
+getgenv().GodMode = false
+getgenv().AutoFarm = false
+getgenv().Speed = 16
+getgenv().Fly = false
+getgenv().Noclip = false
+getgenv().AutoKnife = false
+getgenv().AutoRespawn = false
+getgenv().AntiRagdoll = false
+getgenv().FOVValue = 70
+getgenv().Crosshair = true
+getgenv().GUIColor = Color3.fromRGB(0, 170, 255)
+
+-- === GUI COLOR CHANGER ===
+local function UpdateGUIColor(color)
+    getgenv().GUIColor = color
+    Rayfield:Notify({Title="GUI", Content="Цвет изменён!", Duration=2})
+end
+
+SettingsTab:CreateColorPicker({
+    Name = "GUI Color",
+    Color = getgenv().GUIColor,
+    Flag = "GUI_Color",
+    Callback = function(Color)
+        UpdateGUIColor(Color)
+        -- Применяем к Rayfield (через хак)
+        pcall(function()
+            for _, obj in pairs(Rayfield:GetDescendants()) do
+                if obj:IsA("Frame") or obj:IsA("TextButton") then
+                    obj.BackgroundColor3 = Color
+                end
+            end
+        end)
+    end,
+})
+
+-- === FOV CHANGER ===
+VisualTab:CreateSlider({
+    Name = "Camera FOV",
+    Range = {30, 120},
+    Increment = 1,
+    CurrentValue = 70,
+    Callback = function(v)
+        getgenv().FOVValue = v
+        Camera.FieldOfView = v
+    end,
+})
+
+-- === CROSSHAIR ===
+local Crosshair = Drawing.new("Crosshair")
+Crosshair.Visible = false
+Crosshair.Color = Color3.fromRGB(255, 0, 0)
+Crosshair.Thickness = 2
+Crosshair.Size = 20
+
+RunService.RenderStepped:Connect(function()
+    Crosshair.Visible = getgenv().Crosshair
+    Crosshair.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
+end)
+
+VisualTab:CreateToggle({
+    Name = "Custom Crosshair",
+    CurrentValue = true,
+    Callback = function(v)
+        getgenv().Crosshair = v
+    end,
+})
+
+-- === SILENT AIM + AUTO KNIFE ===
+AimbotTab:CreateToggle({
+    Name = "Silent Aim",
+    CurrentValue = false,
+    Callback = function(v)
+        getgenv().Aimbot.Silent = v
+    end,
+})
+
+AimbotTab:CreateToggle({
+    Name = "Auto Knife (Murderer)",
+    CurrentValue = false,
+    Callback = function(v)
+        getgenv().AutoKnife = v
+    end,
+})
+
+-- === TELEPORT TO PLAYER ===
+local TeleportTarget = nil
+MiscTab:CreateDropdown({
+    Name = "Teleport to Player",
+    Options = {},
+    CurrentOption = "None",
+    Callback = function(playerName)
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Name == playerName then
+                TeleportTarget = p
+                break
+            end
+        end
+    end,
+})
+
+-- Обновление дропдауна
+spawn(function()
+    while wait(1) do
+        local names = {}
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then table.insert(names, p.Name) end
+        end
+        pcall(function()
+            MiscTab:UpdateDropdown("Teleport to Player", names)
+        end)
+    end
+end)
+
+-- Телепорт по клику
+Mouse.Button1Down:Connect(function()
+    if TeleportTarget and LocalPlayer.Character then
+        LocalPlayer.Character:MoveTo(TeleportTarget.Character.HumanoidRootPart.Position + Vector3.new(0, 5, 0))
+    end
+end)
+
+-- === AUTO RESPAWN & ANTI-RAGDOLL ===
+MiscTab:CreateToggle({
+    Name = "Auto Respawn",
+    CurrentValue = false,
+    Callback = function(v)
+        getgenv().AutoRespawn = v
+    end,
+})
+
+MiscTab:CreateToggle({
+    Name = "Anti-Ragdoll",
+    CurrentValue = false,
+    Callback = function(v)
+        getgenv().AntiRagdoll = v
+    end,
+})
+
+-- === SILENT AIM LOGIC ===
+local function FireRemote(targetPos)
+    local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
+    if knife then
+        knife:Activate()
+        -- Попытка найти Remote (MM2)
+        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+            if v.Name:find("Hit") or v.Name:find("Throw") then
+                pcall(function()
+                    v:FireServer(targetPos)
+                end)
+            end
+        end
+    end
+end
+
+-- === ОСНОВНОЙ ЦИКЛ ===
+RunService.Heartbeat:Connect(function()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char and char:FindFirstChild("Humanoid")
+
+    if not char or not root or not humanoid then return end
+
+    -- Speed
+    humanoid.WalkSpeed = getgenv().Speed
+
+    -- Noclip
+    if getgenv().Noclip then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+
+    -- God Mode
+    if getgenv().GodMode then
+        humanoid.Health = 100
+    end
+
+    -- Anti-Ragdoll
+    if getgenv().AntiRagdoll and humanoid:GetState() == Enum.HumanoidStateType.Ragdoll then
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+
+    -- Auto Respawn
+    if getgenv().AutoRespawn and humanoid.Health <= 0 then
+        LocalPlayer:LoadCharacter()
+    end
+
+    -- Auto Knife
+    if getgenv().AutoKnife and LocalPlayer.Team and LocalPlayer.Team.Name == "Murderer" then
+        local knife = workspace:FindFirstChild("Knife")
+        if knife and knife:FindFirstChild("Handle") then
+            root.CFrame = knife.Handle.CFrame
+        end
+    end
+
+    -- Silent Aim
+    if getgenv().Aimbot.Silent then
+        local target = nil
+        local closest = math.huge
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                local head = p.Character.Head
+                local screen, onScreen = Camera:WorldToViewportPoint(head.Position)
+                local dist = (Vector2.new(screen.X, screen.Y) - Vector2.new(Mouse.X, Mouse.Y + 36)).Magnitude
+                if dist < getgenv().Aimbot.FOV and dist < closest and onScreen then
+                    target = head
+                    closest = dist
+                end
+            end
+        end
+        if target then
+            FireRemote(target.Position)
+        end
+    end
+end)
+
+-- === FOV CIRCLE ===
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Radius = 120
+FOVCircle.Color = Color3.fromRGB(0, 255, 255)
+FOVCircle.Thickness = 2
+FOVCircle.Filled = false
+FOVCircle.Transparency = 0.8
+
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Visible = getgenv().Aimbot.Enabled or getgenv().Aimbot.Silent
+    FOVCircle.Radius = getgenv().Aimbot.FOV
+    FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
+end)
+
+-- === УВЕДОМЛЕНИЕ ===
+Rayfield:Notify({
+    Title = "NEON HACK v9.5",
+    Content = "Все новые фичи загружены! Используй табы.",
+    Duration = 6,
+    Image = 6035057947,
+})
