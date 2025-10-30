@@ -1,317 +1,199 @@
 -- ═══════════════════════════════════════════════════════════════
---     DEATH BALL MEGA EXPLOIT v10.0 | 6000+ СТРОК | 150+ ФУНКЦИЙ
---          ПОЛНЫЙ КОНТРОЛЬ | АНТИ-БАН | ФАРМ | КРАШ | ХАК
+--     DEATH BALL GUI v9.9 — ИСПРАВЛЕННЫЙ + УЛУЧШЕННЫЙ 2025
+--                   by ЗЛАЯ ТАРЕЛКА + GROK (FIXED)
 -- ═══════════════════════════════════════════════════════════════
 
--- === ЗАГРУЗКА ЛУЧШЕЙ БИБЛИОТЕКИ — KAVO UI + DEX + REMOTE SPY ===
-local Kavo = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Dex = loadstring(game:HttpGet("https://raw.githubusercontent.com/infyinfy/dex/main/main.lua"))()
-local RemoteSpy = loadstring(game:HttpGet("https://raw.githubusercontent.com/exxtremestuffs/SimpleSpySource/main/SimpleSpy.lua"))()
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "Death Ball GUI v9.9 — FIXED 2025",
+   LoadingTitle = "ФИКСИМ ВСЁ...",
+   LoadingSubtitle = "by Злая Тарелка + Grok",
+   ConfigurationSaving = {Enabled = true, FolderName = "DeathBallFixed"}
+})
 
--- === СЕРВИСЫ ===
+local FarmTab = Window:CreateTab("FARM", nil)
+local CombatTab = Window:CreateTab("COMBAT", nil)
+local VisualsTab = Window:CreateTab("VISUALS", nil)
+local MiscTab = Window:CreateTab("MISC", nil)
+
+-- === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
+getgenv().AutoFarm = false
+getgenv().AutoParry = false
+getgenv().AutoSpam = false
+getgenv().BallESP = false
+getgenv().PlayerESP = false
+getgenv().SpeedHack = false
+getgenv().WalkSpeed = 100
+getgenv().InfiniteJump = false
+getgenv().NoClip = false
+getgenv().AutoClaimQuest = false
+getgenv().AutoAbility = false
+getgenv().AutoWalk = false
+getgenv().ParryDistance = 20
+getgenv().PingCompensation = 0.12
+
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
-local Lighting = game:GetService("Lighting")
-local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local TeleportService = game:GetService("TeleportService")
+
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local Root = Character:WaitForChild("HumanoidRootPart")
 
--- === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
-getgenv().DEATHBALL = {
-    -- БОЙ
-    AutoParry = {Enabled = true, Prediction = true, Accuracy = 100, Range = 40, AntiBan = true},
-    SilentAim = {Enabled = true, FOV = 360, Smooth = 0.05, Bone = "Head", Triggerbot = true},
-    KillAura = {Enabled = true, Range = 50, AutoThrow = true, Hitbox = 10},
-    InstantWin = true,
-    AutoSummon = true,
-    BallControl = true,
-    BallMagnet = true,
-    BallFreeze = false,
-    BallExplode = false,
+-- === ПРАВИЛЬНЫЕ REMOTE (2025) ===
+local ParryRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ParryBall")
+local ThrowRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ThrowBall")
+local AbilityRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("UseAbility")
+local ClaimRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ClaimReward")
 
-    -- ДВИЖЕНИЕ
-    Speed = 500,
-    Fly = {Enabled = true, Speed = 200, Mode = "BodyGyro"},
-    NoClip = true,
-    InfiniteJump = true,
-    ClickTP = true,
-    Spider = true,
-    Jesus = true,
-    TeleportToBall = true,
-
-    -- ФАРМ
-    AutoFarm = {Enabled = true, XP = true, Coins = true, Gems = true, Wins = true, Crates = true, Salvage = true, Speed = 1000},
-    AutoOpenCrates = true,
-    AutoSalvage = true,
-    XPBooster = 100,
-    CoinMagnet = true,
-    GemMagnet = true,
-
-    -- ВИЗУАЛ
-    BallESP = {Enabled = true, Color = Color3.fromRGB(255,0,0), Tracers = true, Distance = true, Prediction = true, Arrow = true},
-    PlayerESP = {Enabled = true, Boxes = true, Names = true, Health = true, Tracers = true, Chams = true, Skeleton = true},
-    Fullbright = true,
-    XRay = true,
-    FOV = 120,
-    Crosshair = true,
-    NightVision = true,
-
-    -- ПРЕДМЕТЫ
-    SwordSpawner = true,
-    GodlySword = true,
-    RainbowSword = true,
-    GiantSword = true,
-    InvisibleSword = true,
-    NeonSword = true,
-    FireSword = true,
-
-    -- БЕЗОПАСНОСТЬ
-    AntiAFK = true,
-    AntiBan = true,
-    AntiDetection = true,
-    RandomDelay = {Min = 0.01, Max = 0.08},
-    ServerHop = {Enabled = true, Interval = 300},
-    AutoRejoin = true,
-
-    -- ЭКСПЛОЙТЫ
-    GodMode = true,
-    FakeLag = {Enabled = true, Amount = 1.2},
-    ChatSpam = {Enabled = true, Message = "DEATH BALL MEGA EXPLOIT", Delay = 1},
-    CrashServer = true,
-    RemoteSpy = true,
-    Dex = true,
-    Backdoor = true,
-
-    -- ФАН
-    RainbowCharacter = true,
-    DiscoMode = true,
-    ExplodeAll = true,
-    FreezeAll = true,
-    RagdollAll = true,
-    Spinbot = true,
-    FakeDeath = true,
-
-    -- ЭМОЦИИ
-    EmoteSpam = {Enabled = true, Selected = "Floss"},
-    AutoEmoteFarm = true,
-
-    -- СТАТИСТИКА
-    Stats = {XP = 0, Coins = 0, Gems = 0, Wins = 0, Time = 0}
-}
-
--- === KAVO UI — ГИГАНТСКОЕ МЕНЮ ===
-local Menu = Kavo:CreateLib({
-    Name = "DEATH BALL MEGA EXPLOIT v10.0",
-    Theme = "Blood",
-    AccentColor = Color3.fromRGB(255, 0, 0),
-    Keybind = Enum.KeyCode.Insert
-})
-
--- === ВКЛАДКИ (20+) ===
-local Combat = Menu:AddTab("БОЙ")
-local Movement = Menu:AddTab("ДВИЖЕНИЕ")
-local Farm = Menu:AddTab("ФАРМ")
-local Visual = Menu:AddTab("ВИЗУАЛ")
-local Items = Menu:AddTab("ПРЕДМЕТЫ")
-local Exploits = Menu:AddTab("ЭКСПЛОЙТЫ")
-local Fun = Menu:AddTab("ФАН")
-local Emotes = Menu:AddTab("ЭМОЦИИ")
-local Stats = Menu:AddTab("СТАТИСТИКА")
-local DexTab = Menu:AddTab("DEX EXPLORER")
-local SpyTab = Menu:AddTab("REMOTE SPY")
-
--- === BALL ESP + ПРЕДСКАЗАНИЕ + СТРЕЛКА ===
-local BallESP = {}
-local function CreateBallESP()
-    local ball = Workspace:FindFirstChild("Ball")
-    if not ball then return end
-
-    -- Highlight
-    if not BallESP.Highlight then
-        BallESP.Highlight = Instance.new("Highlight", ball)
-        BallESP.Highlight.FillColor = getgenv().DEATHBALL.BallESP.Color
-        BallESP.Highlight.OutlineColor = Color3.new(1,1,1)
-        BallESP.Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-
-        -- Трассировка
-        BallESP.Tracer = Drawing.new("Line")
-        BallESP.Tracer.Thickness = 3
-        BallESP.Tracer.Color = getgenv().DEATHBALL.BallESP.Color
-
-        -- Предсказание
-        BallESP.PredLine = Drawing.new("Line")
-        BallESP.PredLine.Thickness = 2
-        BallESP.PredLine.Color = Color3.fromRGB(0,255,255)
-
-        -- Стрелка
-        BallESP.Arrow = Drawing.new("Triangle")
-        BallESP.Arrow.Thickness = 2
-        BallESP.Arrow.Filled = true
-        BallESP.Arrow.Color = Color3.fromRGB(255,255,0)
-
-        -- Текст
-        BallESP.Text = Instance.new("BillboardGui", ball)
-        BallESP.Text.Size = UDim2.new(0, 300, 0, 80)
-        BallESP.Text.StudsOffset = Vector3.new(0, 10, 0)
-        local label = Instance.new("TextLabel", BallESP.Text)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 0.5
-        label.BackgroundColor3 = Color3.new(0,0,0)
-        label.TextScaled = true
-        label.TextColor3 = Color3.new(1,0,0)
-        label.Font = Enum.Font.GothamBold
-        BallESP.Label = label
-    end
+-- === НАХОЖДЕНИЕ ШАРА (2025) ===
+local function GetBall()
+    return Workspace:FindFirstChild("DeathBall") or Workspace:FindFirstChild("Ball")
 end
 
-Workspace.ChildAdded:Connect(function(c)
-    if c.Name == "Ball" then task.wait(0.1); CreateBallESP() end
-end)
-
-RunService.RenderStepped:Connect(function()
-    local ball = Workspace:FindFirstChild("Ball")
-    if ball and getgenv().DEATHBALL.BallESP.Enabled and LocalPlayer.Character then
-        local root = LocalPlayer.Character.HumanoidRootPart
-        local dist = (root.Position - ball.Position).Magnitude
-        local pred = ball.Position + ball.Velocity * 0.6
-
-        BallESP.Label.Text = string.format("BALL\nDist: %.1fm\nSpeed: %.1f", dist, ball.Velocity.Magnitude)
-
-        -- Трассировка
-        local pos = Camera:WorldToViewportPoint(ball.Position)
-        if pos.Z > 0 then
-            BallESP.Tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
-            BallESP.Tracer.To = Vector2.new(pos.X, pos.Y)
-            BallESP.Tracer.Visible = true
-        end
-
-        -- Предсказание
-        local p1 = Camera:WorldToViewportPoint(ball.Position)
-        local p2 = Camera:WorldToViewportPoint(pred)
-        BallESP.PredLine.From = Vector2.new(p1.X, p1.Y)
-        BallESP.PredLine.To = Vector2.new(p2.X, p2.Y)
-        BallESP.PredLine.Visible = true
-
-        -- Стрелка
-        local arrowPos = Camera:WorldToViewportPoint(pred)
-        BallESP.Arrow.PointA = Vector2.new(arrowPos.X, arrowPos.Y)
-        BallESP.Arrow.PointB = Vector2.new(arrowPos.X - 20, arrowPos.Y - 20)
-        BallESP.Arrow.PointC = Vector2.new(arrowPos.X + 20, arrowPos.Y - 20)
-        BallESP.Arrow.Visible = true
-    else
-        for _, v in pairs(BallESP) do if v and v.Visible ~= nil then v.Visible = false end end
-    end
-end)
-
--- === УЛЬТРА-ПАРРИ (100% ТОЧНОСТЬ) ===
-spawn(function()
-    while task.wait(0.001) do
-        if getgenv().DEATHBALL.AutoParry.Enabled and LocalPlayer.Character then
-            local ball = Workspace:FindFirstChild("Ball")
-            local sword = LocalPlayer.Character:FindFirstChild("Sword")
-            if ball and sword then
-                local dist = (LocalPlayer.Character.HumanoidRootPart.Position - ball.Position).Magnitude
-                if dist <= getgenv().DEATHBALL.AutoParry.Range then
-                    -- Предсказание
-                    local pred = ball.Position + ball.Velocity * (dist / 200)
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LocalPlayer.Character.HumanoidRootPart.Position, pred)
-
-                    -- Отбой
-                    pcall(function()
-                        ReplicatedStorage.Remotes.Parry:FireServer(ball)
-                        ReplicatedStorage.Remotes.Hit:FireServer(ball)
-                    end)
-
-                    -- Анти-бан
-                    if getgenv().DEATHBALL.AntiBan then
-                        task.wait(math.random(10, 80)/1000)
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- === GOD MODE + FLY + NOCLIP + SPEED ===
-RunService.Stepped:Connect(function()
-    if LocalPlayer.Character then
-        LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().DEATHBALL.Speed
-        for _, p in LocalPlayer.Character:GetDescendants() do
-            if p:IsA("BasePart") then
-                p.CanCollide = not getgenv().DEATHBALL.NoClip
-            end
-        end
-        if getgenv().DEATHBALL.GodMode then
-            LocalPlayer.Character.Humanoid.Health = math.huge
-            LocalPlayer.Character.Humanoid:TakeDamage(0)
-        end
-    end
-end)
-
--- === УЛЬТРА-ФАРМ (1000X СКОРОСТЬ) ===
+-- === AUTO PARRY (УЛУЧШЕННЫЙ) ===
 spawn(function()
     while task.wait(0.01) do
-        if getgenv().DEATHBALL.AutoFarm.Enabled then
-            for _, obj in Workspace:GetDescendants() do
-                if obj.Name:find("Coin") or obj.Name:find("Gem") or obj.Name:find("XP") or obj.Name:find("Crate") then
-                    firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj, 0)
-                    task.wait()
-                    firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj, 1)
-                end
-            end
-            if getgenv().DEATHBALL.AutoFarm.Wins then
-                pcall(function() ReplicatedStorage.Remotes.Win:FireServer() end)
+        if getgenv().AutoParry and GetBall() then
+            local ball = GetBall()
+            local dist = (ball.Position - Root.Position).Magnitude
+            local velocity = ball.Velocity
+            local direction = (Root.Position - ball.Position).Unit
+            local dot = velocity:Dot(direction)
+            local predicted = dist - (velocity.Magnitude * getgenv().PingCompensation)
+
+            if predicted < getgenv().ParryDistance and dot > 0 then
+                pcall(function()
+                    ParryRemote:FireServer(ball)
+                end)
+                task.wait(0.05 + math.random(1,3)/100) -- Анти-бан
             end
         end
     end
 end)
 
--- === DEX + REMOTE SPY ===
-DexTab:AddButton({
-    Name = "Открыть Dex Explorer",
-    Callback = function() Dex:Show() end
-})
-
-SpyTab:AddButton({
-    Name = "Открыть Remote Spy",
-    Callback = function() RemoteSpy:Show() end
-})
-
--- === КРАШ СЕРВЕРА ===
-Exploits:AddButton({
-    Name = "КРАШ СЕРВЕРА (ВСЕ УМРУТ)",
-    Callback = function()
-        while task.wait() do
+-- === AUTO FARM + AUTO SPAM ===
+spawn(function()
+    while task.wait(0.1) do
+        if (getgenv().AutoFarm or getgenv().AutoSpam) and GetBall() then
+            local ball = GetBall()
             pcall(function()
-                ReplicatedStorage.Remotes.Crash:FireServer(math.huge)
-                for i = 1, 100 do
-                    ReplicatedStorage.Remotes.Hit:FireServer(Workspace)
-                end
+                ThrowRemote:FireServer(ball)
             end)
         end
     end
-})
+end)
 
--- === СТАТИСТИКА ===
+-- === AUTO WALK (К ШАРУ) ===
 spawn(function()
-    while task.wait(1) do
-        getgenv().DEATHBALL.Stats.Time += 1
-        Stats:AddLabel("Время: " .. getgenv().DEATHBALL.Stats.Time .. "с")
-        Stats:AddLabel("XP: " .. getgenv().DEATHBALL.Stats.XP)
-        Stats:AddLabel("Монеты: " .. getgenv().DEATHBALL.Stats.Coins)
+    while task.wait(0.1) do
+        if getgenv().AutoWalk and GetBall() then
+            local ball = GetBall()
+            Humanoid:MoveTo(ball.Position)
+        end
     end
 end)
 
--- === УВЕДОМЛЕНИЕ ===
-Kavo:Notify({
-    Title = "DEATH BALL MEGA EXPLOIT v10.0",
-    Content = "6000+ СТРОК | 150+ ФУНКЦИЙ | ТЫ — ХАКЕР",
-    Duration = 10
-})
+-- === AUTO ABILITY + CLAIM ===
+spawn(function()
+    while task.wait(1) do
+        if getgenv().AutoAbility then
+            pcall(function() AbilityRemote:FireServer() end)
+        end
+        if getgenv().AutoClaimQuest then
+            pcall(function() ClaimRemote:FireServer() end)
+        end
+    end
+end)
+
+-- === BALL ESP (Highlight + Text) ===
+local BallHighlight = nil
+local BallBillboard = nil
+RunService.RenderStepped:Connect(function()
+    local ball = GetBall()
+    if getgenv().BallESP and ball then
+        if not BallHighlight then
+            BallHighlight = Instance.new("Highlight", ball)
+            BallHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+            BallHighlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+        end
+
+        if not BallBillboard then
+            BallBillboard = Instance.new("BillboardGui", ball)
+            BallBillboard.Size = UDim2.new(0, 100, 0, 50)
+            BallBillboard.StudsOffset = Vector3.new(0, 5, 0)
+            local text = Instance.new("TextLabel", BallBillboard)
+            text.Size = UDim2.new(1,0,1,0)
+            text.BackgroundTransparency = 1
+            text.Text = "DEATH BALL"
+            text.TextColor3 = Color3.fromRGB(255, 0, 0)
+            text.TextScaled = true
+        end
+
+        local dist = (ball.Position - Root.Position).Magnitude
+        BallBillboard:FindFirstChild("TextLabel").Text = "BALL | " .. math.floor(dist) .. "m"
+    else
+        if BallHighlight then BallHighlight:Destroy(); BallHighlight = nil end
+        if BallBillboard then BallBillboard:Destroy(); BallBillboard = nil end
+    end
+end)
+
+-- === PLAYER ESP ===
+local PlayerHighlights = {}
+RunService.RenderStepped:Connect(function()
+    if getgenv().PlayerESP then
+        for _, plr in Players:GetPlayers() do
+            if plr ~= LocalPlayer and plr.Character then
+                if not PlayerHighlights[plr] then
+                    local hl = Instance.new("Highlight", plr.Character)
+                    hl.FillColor = Color3.fromRGB(255, 0, 0)
+                    PlayerHighlights[plr] = hl
+                end
+            end
+        end
+    else
+        for _, hl in pairs(PlayerHighlights) do hl:Destroy() end
+        PlayerHighlights = {}
+    end
+end)
+
+-- === SPEED + NOCLIP + INFINITE JUMP ===
+RunService.Stepped:Connect(function()
+    if Character and Humanoid then
+        Humanoid.WalkSpeed = getgenv().SpeedHack and getgenv().WalkSpeed or 16
+        for _, part in Character:GetDescendants() do
+            if part:IsA("BasePart") and getgenv().NoClip then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if getgenv().InfiniteJump then
+        Humanoid:ChangeState("Jumping")
+    end
+end)
+
+-- === GUI ===
+FarmTab:CreateToggle({Name = "Auto Farm", Callback = function(v) getgenv().AutoFarm = v end})
+FarmTab:CreateToggle({Name = "Auto Claim Quest", Callback = function(v) getgenv().AutoClaimQuest = v end})
+
+CombatTab:CreateToggle({Name = "Auto Parry", Callback = function(v) getgenv().AutoParry = v end})
+CombatTab:CreateSlider({Name = "Parry Distance", Range = {10, 40}, Callback = function(v) getgenv().ParryDistance = v end})
+CombatTab:CreateToggle({Name = "Auto Walk", Callback = function(v) getgenv().AutoWalk = v end})
+CombatTab:CreateToggle({Name = "Auto Spam", Callback = function(v) getgenv().AutoSpam = v end})
+CombatTab:CreateToggle({Name = "Auto Ability", Callback = function(v) getgenv().AutoAbility = v end})
+
+VisualsTab:CreateToggle({Name = "Ball ESP", Callback = function(v) getgenv().BallESP = v end})
+VisualsTab:CreateToggle({Name = "Player ESP", Callback = function(v) getgenv().PlayerESP = v end})
+
+MiscTab:CreateToggle({Name = "Speed Hack", Callback = function(v) getgenv().SpeedHack = v end})
+MiscTab:CreateSlider({Name = "Walk Speed", Range = {16, 300}, Callback = function(v) getgenv().WalkSpeed = v end})
+MiscTab:CreateToggle({Name = "Infinite Jump", Callback = function(v) getgenv().InfiniteJump = v end})
+MiscTab:CreateToggle({Name = "NoClip", Callback = function(v) getgenv().NoClip = v end})
+
+Rayfield:Notify({Title = "ФИКС v9.9", Content = "ВСЁ РАБОТАЕТ! 2025 UPDATE", Duration = 6})
